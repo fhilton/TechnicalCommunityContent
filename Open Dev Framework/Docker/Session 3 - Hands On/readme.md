@@ -83,7 +83,7 @@ In this exercise, you will build a Docker image and push it to Docker Hub. Then 
 
 	![Web page served up by a PHP app running in a container managed by Swarm in Azure](Images/dcos-9.png)
 
-	_Web page served up by a PHP app running in a container managed by Swarm in Azure_
+	_Web page served up by a PHP app running in a container_
 
 
 
