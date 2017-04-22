@@ -48,7 +48,7 @@ Estimated time to complete this lab: **75** minutes.
 
 
 
-<a name="Exercise5"></a>
+<a name="Exercise1"></a>
 ## Exercise 1: Create a Docker image, push it to Docker Hub, and run it in a container ##
 
 The next step is to build a container image and upload it to an image repository. [Docker Hub](https://hub.docker.com/) is Docker's public image repository, and it is basically the mother of all other Docker repositories. Most custom Docker images originate from a base image stored in Docker Hub. The "resources" folder of this lab contains a simple PHP app that shows system information regarding the host server in a Web page. Accompanying the app is a file named **Dockerfile**, which contains instructions for building a Docker image. This Dockerfile is simple: it starts with a base image for PHP and exposes a TCP port for the Web server.
@@ -88,7 +88,7 @@ In this exercise, you will build a Docker image and push it to Docker Hub. Then 
 At the moment, there is only one container instance running in the agent VM. Docker Swarm is capable of deploying multiple container instances and load-balancing requests targeting those instances, but the version of Docker Swarm currently installed on the cluster lacks these capabilities. Not to fear, however; you will soon be launching multiple container instances using DC/OS and Kubernetes.
 
 
-<a name="Exercise1"></a>
+<a name="Exercise2"></a>
 ## Exercise 2: Create an SSH key pair ##
 
 Before you can deploy Docker images to Azure, you must create an Azure Container Service. And in order to create an Azure Container Service, you need a public/private key pair for authenticating with that service over SSH. In this exercise, you will create an SSH key pair. If you are using macOS or Linux, you will create the key pair with ssh-keygen. If you are running Windows instead, you will use a third-party tool named PuTTYGen.
@@ -134,7 +134,7 @@ Before you can deploy Docker images to Azure, you must create an Azure Container
 
 You now have a pair of files containing a public key and a private key. Remember where these files are located, because you will need them in subsequent exercises.
 
-<a name="Exercise2"></a>
+<a name="Exercise3"></a>
 ## Exercise 3: Create a container service ##
 
 Now that you have an SSH key pair, you can deploy an Azure Container Service. In this exercise, you will use the Azure Portal to create a container service for running Docker containers, and you will configure the service to use DCOS.
@@ -193,7 +193,7 @@ Now that you have an SSH key pair, you can deploy an Azure Container Service. In
 
 When the deployment completes successfully, you are ready to proceed. The next step is to get the fully qualified domain name of the master node in preparation for opening a secure connection to the service.
 
-<a name="Exercise3"></a>
+<a name="Exercise4"></a>
 ## Exercise 4: Record fully qualified domain names ##
 
 In this exercise, you will retrieve fully qualified domain names (FQDNs) for the master node and agent node of the container service you deployed in the previous exercise.
@@ -213,7 +213,7 @@ In this exercise, you will retrieve fully qualified domain names (FQDNs) for the
 
 You will use the **master FQDN** in the next exercise to establish an SSH tunnel to the master node. 
 
-<a name="Exercise4"></a>
+<a name="Exercise5"></a>
 ## Exercise 5: Connect to the master node ##
 
 In this exercise, you will establish an SSH connection to the master node of the container service you deployed in [Exercise 2](#Exercise2) so you can use the Docker client to execute Docker commands in Azure.
