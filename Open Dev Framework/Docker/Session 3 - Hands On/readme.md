@@ -85,7 +85,6 @@ In this exercise, you will build a Docker image and push it to Docker Hub. Then 
 
 	_Web page served up by a PHP app running in a container managed by Swarm in Azure_
 
-At the moment, there is only one container instance running in the agent VM. Docker Swarm is capable of deploying multiple container instances and load-balancing requests targeting those instances, but the version of Docker Swarm currently installed on the cluster lacks these capabilities. Not to fear, however; you will soon be launching multiple container instances using DC/OS and Kubernetes.
 
 
 <a name="Exercise2"></a>
