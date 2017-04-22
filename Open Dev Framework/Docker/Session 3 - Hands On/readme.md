@@ -81,7 +81,7 @@ In this exercise, you will build a Docker image and push it to Docker Hub. Then 
 
 1. Open a browser and browse to http://localhost:8082/
 
-	![Web page served up by a PHP app running in a container managed by Swarm in Azure](Images/dcos-9.png)
+	![Web page served up by a PHP app running in a container](Images/dcos-9.png)
 
 	_Web page served up by a PHP app running in a container_
 
@@ -146,11 +146,11 @@ Now that you have an SSH key pair, you can deploy an Azure Container Service. In
 
 	_Creating a container service_
 
-1. Click the **Create** button at the bottom of the "Azure Container Service" blade. In the "Basics" blade, select **Swarm** as the orchestrator. Select **Create new** under **Resource group** and enter the resource-group name "OrchestrationLabResourceGroup" (without quotation marks). Select the location nearest you under **Location**, and then click the **OK** button.
+1. Click the **Create** button at the bottom of the "Azure Container Service" blade. In the "Basics" blade, select **DC/OS** as the orchestrator. Select **Create new** under **Resource group** and enter the resource-group name "OrchestrationLabResourceGroup" (without quotation marks). Select the location nearest you under **Location**, and then click the **OK** button.
 
 	> Swarm, DC/OS, and Kubernetes are popular open-source orchestration tools that enable you to deploy clusters containing thousands or even tens of thousands of containers. (Think of a compute cluster consisting of containers rather than physical servers, all sharing a load and running code in parallel.)  All three are preinstalled in Azure Container Service, with the goal being that you can use the one you are most familiar with rather than learn a new tool. Swarm is Docker's own native clustering tool.
 
-	![Basic settings](Images/Docker-acs-basics-dcos.png)
+	![Basic settings](Images/docker-acs-basics-dcos.png)
 
 	_Basic settings_
 
@@ -225,7 +225,7 @@ In this exercise, you will establish an SSH connection to the master node of the
 
 	<pre>ssh -L 8000:localhost:80 dockeruser@master-fqdn</i></pre>
 
-	> The purpose of the -L switch is to forward traffic transmitted through port 8000 on the local machine (that's the port used by the **docker** command you will be using shortly) to port 80 at the other end. Docker Swarm listens on port 2375.
+	> The purpose of the -L switch is to forward traffic transmitted through port 8000 on the local machine (that's the port used by the **docker** command you will be using shortly) to port 80 at the other end. 
 
 1. If asked to confirm that you wish to connect, answer yes. Once connected, leave the terminal window open and **proceed to [Exercise 5](#Exercise5). The remaining steps in this exercise are for Windows users only**. 
 
@@ -249,7 +249,7 @@ In this exercise, you will establish an SSH connection to the master node of the
 
 1. Select **Tunnels** in the treeview. Then set **Source port** to **8000** and **Destination** to **localhost:80**, and click the **Add** button. Then click the **Open** button to open a connection to the master node. If you are warned that the server's host key isn't cached in the registry and asked to confirm that you want to connect anyway, click **Yes**.
 
-	> The purpose of this is to forward traffic transmitted through port 8000 on the local machine (that's the port used by the **docker** command you will be using shortly) to port 80 at the other end. Docker Swarm listens on port 2375.
+	> The purpose of this is to forward traffic transmitted through port 8000 on the local machine (that's the port used by the **docker** command you will be using shortly) to port 80 at the other end. 
 	
 	![Configuring the SSH tunnel](Images/putty-6.png)
 
