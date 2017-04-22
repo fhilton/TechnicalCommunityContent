@@ -2,28 +2,15 @@
 # Docker Orchestration and the Azure Container Service #
 
 <a name="Overview"></a>
-## Overview ##
-
-Since its inception, Docker has been has been delivering solutions to support and enable DevOps. [DevOps](https://en.wikipedia.org/wiki/DevOps) is a set of tools and practices for automating software development processes. Docker earned lots of attention due to how quickly and easily and software could be deployed and scaled with it, and it has since revolutionized the way that many organizations develop and deliver software. 
-
-Docker's primary contribution to DevOps is [containers](https://www.docker.com/what-container). Containers allow apps and all of their dependencies, including run-times, libraries, and file systems, to be wrapped up in a single package. Containers provide isolation and abstraction much like virtual machines (VMs) do, but since they don't virtualize hardware, containers tend to be much smaller and start much faster. In addition, they place less demand on system resources such as RAM since an entire operating-system image doesn't have to be loaded into each container.
-
-The process of getting containers into production and managing them while they are there is called [orchestration](https://www.docker.com/cp/container-orchestration-engines). Containers are designed to be deployed en masse with the possibility of thousands of container instances running on a single machine or cluster of machines. Several container-orchestration tools are available in the open-source community, including [Docker Swarm](https://docs.docker.com/engine/swarm/), [Apache DC/OS](https://dcos.io/), and [Google Kubernetes](https://kubernetes.io/). Orchestration tools such as these typically deploy containers to a cluster of physical or virtual machines. One or more of these machines acts as a *master node* that controls the orchestration by deploying containers to agent nodes. The other nodes in the cluster are *agent nodes*, which host the containers themselves.
-
-![A container cluster](Images/orchestration.png)
-
-Microsoft's [Azure Container Service (ACS)](https://azure.microsoft.com/en-us/services/container-service/) provides preconfigured, production-ready clusters using DC/OS, Kubernetes, or Swarm for orchestration. ACS is a first class citizen on Azure, meaning that it can be deployed and managed through a number of different channels including the Azure CLI, Azure APIs and the Azure Portal. Agent clusters are built on [VM Scale Sets](https://docs.microsoft.com/en-us/azure/virtual-machine-scale-sets/virtual-machine-scale-sets-overview) so they can be scaled up or down as needed without having to rebuild the cluster.
-
-In this lab, you will deploy three separate container services using the Azure Container Service and designate a different orchestrator for each. Then you will run one or more container instances in each container service using a container image you pushed to Docker Hub. Along the way, you will get first-hand experience dealing with Swarm, DC/OS, and Kubernetes, and see what's involved in using them with Azure.
 
 <a name="Objectives"></a>
 ### Objectives ###
 
 In this hands-on lab, you will learn how to:
 
+- Create Docker images and push them to Docker Hub
 - Create an Azure Container Service
 - Tunnel in to an Azure Container Service using SSH
-- Create Docker images and push them to Docker Hub
 - Orchestrate container deployments using Swarm, DC/OS, and Kubernetes
 - Run Docker containers in Azure
 
@@ -48,19 +35,61 @@ You do not need to install the Docker client if you already have Docker (or Dock
 
 This hands-on lab includes the following exercises:
 
-- [Exercise 1: Create an SSH key pair](#Exercise1)
-- [Exercise 2: Create a container service](#Exercise2)
-- [Exercise 3: Record fully qualified domain names](#Exercise3)
-- [Exercise 4: Connect to the master node](#Exercise4)
-- [Exercise 5: Create a Docker image, push it to Docker Hub, and run it in a container](#Exercise5)
+- [Exercise 1: Create a Docker image, push it to Docker Hub, and run it in a container](#Exercise1)
+- [Exercise 2: Create an SSH key pair](#Exercise2)
+- [Exercise 3: Create a container service](#Exercise3)
+- [Exercise 4: Record fully qualified domain names](#Exercise4)
+- [Exercise 5: Connect to the master node](#Exercise5)
 - [Exercise 6: Delete the resource group](#Exercise6)
-- [Exercise 7: Orchestrate with DC/OS](#Exercise7)
+<!--- [Exercise 7: Orchestrate with DC/OS](#Exercise7)-->
 - [Exercise 8: Orchestrate with Kubernetes](#Exercise8)
 
 Estimated time to complete this lab: **75** minutes.
 
+
+
+<a name="Exercise5"></a>
+## Exercise 1: Create a Docker image, push it to Docker Hub, and run it in a container ##
+
+The next step is to build a container image and upload it to an image repository. [Docker Hub](https://hub.docker.com/) is Docker's public image repository, and it is basically the mother of all other Docker repositories. Most custom Docker images originate from a base image stored in Docker Hub. The "resources" folder of this lab contains a simple PHP app that shows system information regarding the host server in a Web page. Accompanying the app is a file named **Dockerfile**, which contains instructions for building a Docker image. This Dockerfile is simple: it starts with a base image for PHP and exposes a TCP port for the Web server.
+
+In this exercise, you will build a Docker image and push it to Docker Hub. Then you will run the image in a container hosted in Azure.
+
+1. In the Command prompt or terminal window, execute the following command to log into Docker Hub. When prompted, enter your Docker ID and password.
+
+	> If you don't have a Docker ID, you can [sign up for one](https://hub.docker.com/) at no cost.
+
+	```
+	docker login
+	```
+
+1. Make sure you are in this lab's "resources" directory. Then use the following command to build a Docker image from the files in the current directory, substituting your Docker ID for *dockerid*. This is the same Docker ID you used to sign in to Docker Hub in the previous step.
+
+	<pre>docker build --tag <i>dockerid</i>/container-info --no-cache .</pre>
+
+	This command uploads the files in the current directory to the Docker Engine running on Azure. The Docker Engine then builds a Docker image using the commands in the Dockerfile and stores the image in a local repository.
+
+1. Now use the following command to push the image to Docker Hub, once more substituting your Docker ID for *dockerid*.
+
+	<pre>docker push <i>dockerid</i>/container-info</pre>
+
+	> If you would like to view the image in Docker Hub, simply point your browser to https://hub.docker.com/r/dockerid/container-info/ and substitute your Docker ID for *dockerid*.
+
+1. Next, use the following command to create a container from the image pushed to Docker Hub and run  the container, again substituting your Docker ID for *dockerid*: 
+
+	<pre>docker run -dit --name c-info -p 8082:80 <i>dockerid</i>/container-info</pre>
+
+1. Open a browser and browse to http://localhost:8082/
+
+	![Web page served up by a PHP app running in a container managed by Swarm in Azure](Images/dcos-9.png)
+
+	_Web page served up by a PHP app running in a container managed by Swarm in Azure_
+
+At the moment, there is only one container instance running in the agent VM. Docker Swarm is capable of deploying multiple container instances and load-balancing requests targeting those instances, but the version of Docker Swarm currently installed on the cluster lacks these capabilities. Not to fear, however; you will soon be launching multiple container instances using DC/OS and Kubernetes.
+
+
 <a name="Exercise1"></a>
-## Exercise 1: Create an SSH key pair ##
+## Exercise 2: Create an SSH key pair ##
 
 Before you can deploy Docker images to Azure, you must create an Azure Container Service. And in order to create an Azure Container Service, you need a public/private key pair for authenticating with that service over SSH. In this exercise, you will create an SSH key pair. If you are using macOS or Linux, you will create the key pair with ssh-keygen. If you are running Windows instead, you will use a third-party tool named PuTTYGen.
 
@@ -106,9 +135,9 @@ Before you can deploy Docker images to Azure, you must create an Azure Container
 You now have a pair of files containing a public key and a private key. Remember where these files are located, because you will need them in subsequent exercises.
 
 <a name="Exercise2"></a>
-## Exercise 2: Create a container service ##
+## Exercise 3: Create a container service ##
 
-Now that you have an SSH key pair, you can deploy an Azure Container Service. In this exercise, you will use the Azure Portal to create a container service for running Docker containers, and you will configure the service to use Docker Swarm. Swarm is a native Docker technology that creates a cluster of Docker Engine nodes allowing container workloads to be spread across multiple nodes in a cluster.
+Now that you have an SSH key pair, you can deploy an Azure Container Service. In this exercise, you will use the Azure Portal to create a container service for running Docker containers, and you will configure the service to use DCOS.
 
 1. Open the [Azure Portal](https://portal.azure.com) in your browser. If you are asked to log in, do so using your Microsoft account.
 
@@ -122,7 +151,7 @@ Now that you have an SSH key pair, you can deploy an Azure Container Service. In
 
 	> Swarm, DC/OS, and Kubernetes are popular open-source orchestration tools that enable you to deploy clusters containing thousands or even tens of thousands of containers. (Think of a compute cluster consisting of containers rather than physical servers, all sharing a load and running code in parallel.)  All three are preinstalled in Azure Container Service, with the goal being that you can use the one you are most familiar with rather than learn a new tool. Swarm is Docker's own native clustering tool.
 
-	![Basic settings](Images/docker-acs-basics-swarm.png)
+	![Basic settings](Images/Docker-acs-basics-dcos.png)
 
 	_Basic settings_
 
@@ -165,7 +194,7 @@ Now that you have an SSH key pair, you can deploy an Azure Container Service. In
 When the deployment completes successfully, you are ready to proceed. The next step is to get the fully qualified domain name of the master node in preparation for opening a secure connection to the service.
 
 <a name="Exercise3"></a>
-## Exercise 3: Record fully qualified domain names ##
+## Exercise 4: Record fully qualified domain names ##
 
 In this exercise, you will retrieve fully qualified domain names (FQDNs) for the master node and agent node of the container service you deployed in the previous exercise.
 
@@ -181,16 +210,11 @@ In this exercise, you will retrieve fully qualified domain names (FQDNs) for the
 
 	_Copying the master FQDN to the clipboard_
 
-1. Copy the fully qualified domain name of the agent node to the clipboard and save it in your favorite text editor so you can retrieve it later. This is the **agent FQDN**.
 
-    ![Copying the agent FQDN to the clipboard](Images/copy-agent-fqdn.png)
-
-	_Copying the agent FQDN to the clipboard_
-
-You will use the **master FQDN** in the next exercise to establish an SSH tunnel to the master node. You will use the **agent FQDN** in [Exercise 5](#Exercise5) to connect to a PHP Web app running in a container in the agent node.
+You will use the **master FQDN** in the next exercise to establish an SSH tunnel to the master node. 
 
 <a name="Exercise4"></a>
-## Exercise 4: Connect to the master node ##
+## Exercise 5: Connect to the master node ##
 
 In this exercise, you will establish an SSH connection to the master node of the container service you deployed in [Exercise 2](#Exercise2) so you can use the Docker client to execute Docker commands in Azure.
 
@@ -200,9 +224,9 @@ In this exercise, you will establish an SSH connection to the master node of the
 
 1. Execute the following command to SSH in to the master node, replacing *master-fqdn* with the **master FQDN** that you saved in Exercise 3, Step 2:
 
-	<pre>ssh -L 22375:localhost:2375 dockeruser@<i>master-fqdn</i></pre>
+	<pre>ssh -L 8000:localhost:80 dockeruser@master-fqdn</i></pre>
 
-	> The purpose of the -L switch is to forward traffic transmitted through port 22375 on the local machine (that's the port used by the **docker** command you will be using shortly) to port 2375 at the other end. Docker Swarm listens on port 2375.
+	> The purpose of the -L switch is to forward traffic transmitted through port 8000 on the local machine (that's the port used by the **docker** command you will be using shortly) to port 80 at the other end. Docker Swarm listens on port 2375.
 
 1. If asked to confirm that you wish to connect, answer yes. Once connected, leave the terminal window open and **proceed to [Exercise 5](#Exercise5). The remaining steps in this exercise are for Windows users only**. 
 
@@ -224,11 +248,11 @@ In this exercise, you will establish an SSH connection to the master node of the
 
 	_Entering the private key_
 
-1. Select **Tunnels** in the treeview. Then set **Source port** to **22375** and **Destination** to **127.0.0.1:2375**, and click the **Add** button. Then click the **Open** button to open a connection to the master node. If you are warned that the server's host key isn't cached in the registry and asked to confirm that you want to connect anyway, click **Yes**.
+1. Select **Tunnels** in the treeview. Then set **Source port** to **8000** and **Destination** to **localhost:80**, and click the **Add** button. Then click the **Open** button to open a connection to the master node. If you are warned that the server's host key isn't cached in the registry and asked to confirm that you want to connect anyway, click **Yes**.
 
-	> The purpose of this is to forward traffic transmitted through port 22375 on the local machine (that's the port used by the **docker** command you will be using shortly) to port 2375 at the other end. Docker Swarm listens on port 2375.
+	> The purpose of this is to forward traffic transmitted through port 8000 on the local machine (that's the port used by the **docker** command you will be using shortly) to port 80 at the other end. Docker Swarm listens on port 2375.
 	
-	![Configuring the SSH tunnel](Images/putty-4.png)
+	![Configuring the SSH tunnel](Images/putty-6.png)
 
 	_Configuring the SSH tunnel_
 
@@ -239,101 +263,7 @@ In this exercise, you will establish an SSH connection to the master node of the
 	![The SSH terminal window](Images/putty-5.png)
 
 	_he SSH terminal window_
-
-Now that you're connected, you can run the Docker client on your local machine and use port forwarding to execute commands in the Azure Container Service. Leave the SSH window open while you work through the next exercise.
 	
-<a name="Exercise5"></a>
-## Exercise 5: Create a Docker image, push it to Docker Hub, and run it in a container ##
-
-The next step is to build a container image and upload it to an image repository. [Docker Hub](https://hub.docker.com/) is Docker's public image repository, and it is basically the mother of all other Docker repositories. Most custom Docker images originate from a base image stored in Docker Hub. The "resources" folder of this lab contains a simple PHP app that shows system information regarding the host server in a Web page. Accompanying the app is a file named **Dockerfile**, which contains instructions for building a Docker image. This Dockerfile is simple: it starts with a base image for PHP and exposes a TCP port for the Web server.
-
-In this exercise, you will build a Docker image and push it to Docker Hub. Then you will run the image in a container hosted in Azure.
-
-1. Open a terminal window (macOS or Linux) or a Command Prompt window (Windows) and navigate to the "resources" folder of this lab. It contains the files that you will build into a container image.
-
-1. If you are running macOS or Linux, execute the following command in the terminal window:
-
-	<pre>export DOCKER_HOST=localhost:22375</pre>
-
-	If you are running Windows instead, execute this command in the Command Prompt window:
-
-	<pre>set DOCKER_HOST=localhost:22375</pre>
-
-	> This command directs the Docker client to send output to localhost port 22375, which you redirected to port 2375 in the Azure Container Service in the previous exercise. Remember that port 2375 is the one Docker Swarm listens on. The commands that you execute in the next few steps are typed into a local terminal window, but they are **executed in the container service you deployed to the cloud** using the SSH tunnel that you established in the previous exercise.
-
-1. In the Command prompt or terminal window, execute the following command to log into Docker Hub. When prompted, enter your Docker ID and password.
-
-	> If you don't have a Docker ID, you can [sign up for one](https://hub.docker.com/) at no cost.
-
-	```
-	docker login
-	```
-
-1. Make sure you are in this lab's "resources" directory. Then use the following command to build a Docker image from the files in the current directory, substituting your Docker ID for *dockerid*. This is the same Docker ID you used to sign in to Docker Hub in the previous step.
-
-	<pre>docker build --tag <i>dockerid</i>/container-info --no-cache .</pre>
-
-	This command uploads the files in the current directory to the Docker Engine running on Azure. The Docker Engine then builds a Docker image using the commands in the Dockerfile and stores the image in a local repository.
-
-1. Now use the following command to push the image to Docker Hub, once more substituting your Docker ID for *dockerid*.
-
-	<pre>docker push <i>dockerid</i>/container-info</pre>
-
-	> If you would like to view the image in Docker Hub, simply point your browser to https://hub.docker.com/r/dockerid/container-info/ and substitute your Docker ID for *dockerid*.
-
-1. Next, use the following command to create a container from the image pushed to Docker Hub and run  the container, again substituting your Docker ID for *dockerid*: 
-
-	<pre>docker run -dit --name c-info -p 80:80 <i>dockerid</i>/container-info</pre>
-
-1. Open a browser and paste the **agent FQDN** that you saved in Exercise 3, Step 3 into the browser's address bar. Notice the information displayed in the browser window, particularly the system information on line 1. Can you guess what operating system is installed in the agent VM?
-
-	![Web page served up by a PHP app running in a container managed by Swarm in Azure](Images/dcos-9.png)
-
-	_Web page served up by a PHP app running in a container managed by Swarm in Azure_
-
-At the moment, there is only one container instance running in the agent VM. Docker Swarm is capable of deploying multiple container instances and load-balancing requests targeting those instances, but the version of Docker Swarm currently installed on the cluster lacks these capabilities. Not to fear, however; you will soon be launching multiple container instances using DC/OS and Kubernetes.
-
-<a name="Exercise6"></a>
-## Exercise 6: Delete the resource group ##
-
-In this exercise, you will delete the resource group created in [Exercise 2](#Exercise2). Deleting the resource group deletes everything in it and prevents any further charges from being incurred for it, including for the VMs deployed as part of the container service.
-
-1. In the Azure Portal, open the blade for the "OrchestrationLabResourceGroup" resource group. Then click the **Delete** button at the top of the blade.
-
-	![Deleting a resource group](Images/delete-resource-group.png)
-
-	_Deleting a resource group_
-
-1. For safety, you are required to type in the resource group's name. (Once deleted, a resource group cannot be recovered.) Type the name of the resource group. Then click the **Delete** button to remove all traces of this lab from your account.
-
-After a few minutes, you will be notified that the resource group was deleted. If the deleted resource group still appears in the "Resource groups" blade, click that blade's **Refresh** button to update the list of resource groups. The deleted resource group should go away.  
-
-<a name="Exercise7"></a>
-## Exercise 7: Orchestrate with DC/OS ##
-
-In this exercise, you will deploy a new container service and use [DC/OS](https://dcos.io/) for orchestration. DC/OS stands for Datacenter Operating System and is built on top of [Apache Mesos](http://mesos.apache.org/). DC/OS abstracts the underlying operating system and supports many of the functions typically performed by operating systems across multiple nodes on a cluster. Containers are one such resource that can be managed by DC/OS. In Azure, DC/OS is tailored for this purpose. 
-
-1. Repeat the steps in [Exercise 2](#Exercise2), but this time choose **DC/OS** as the orchestrator in Step 3.
-
-	![Creating a container service with DC/OS](Images/docker-acs-basics-dcos.png)
-
-	_Creating a container service with DC/OS_
-
-1. Repeat [Exercise 3](#Exercise3) to obtain the **master FQDN** and **agent FQDN** for the container service.
-
-	![Copying the master and agent FQDNs](Images/fqdns-dcos.png)
-
-	_Copying the master and agent FQDNs_
-
-1. Repeat [Exercise 4](#Exercise4) to connect to the master node. For macOS and Linux, modify the command in Exercise 4, Step 3 to forward port 8000 to localhost:80:
-
-	<pre>ssh -L 8000:localhost:80 dockeruser@<i>master-fqdn</i></pre>
-
-	For Windows, modify Exercise 4, Step 8 by setting **Source port** to **8000** and **Destination** to **localhost:80**, as shown below.
-
-	![Configuring the SSH tunnel](Images/putty-6.png)
-
-	_Configuring the SSH tunnel_
 
 1. Open a browser and enter http://localhost:8000 into the address bar. This will load the DC/OS dashboard.
 
@@ -408,6 +338,22 @@ In this exercise, you will deploy a new container service and use [DC/OS](https:
 	_Web page served up by a PHP app running in a container managed by DC/OS in Azure_
 
 Finish up by repeating [Exercise 6](#Exercise6) to delete the resource group. You will be creating a new container service in the next exercise. 
+
+<a name="Exercise6"></a>
+## Exercise 6: Delete the resource group ##
+
+In this exercise, you will delete the resource group created in [Exercise 2](#Exercise2). Deleting the resource group deletes everything in it and prevents any further charges from being incurred for it, including for the VMs deployed as part of the container service.
+
+1. In the Azure Portal, open the blade for the "OrchestrationLabResourceGroup" resource group. Then click the **Delete** button at the top of the blade.
+
+	![Deleting a resource group](Images/delete-resource-group.png)
+
+	_Deleting a resource group_
+
+1. For safety, you are required to type in the resource group's name. (Once deleted, a resource group cannot be recovered.) Type the name of the resource group. Then click the **Delete** button to remove all traces of this lab from your account.
+
+After a few minutes, you will be notified that the resource group was deleted. If the deleted resource group still appears in the "Resource groups" blade, click that blade's **Refresh** button to update the list of resource groups. The deleted resource group should go away.  
+
 
 <a name="Exercise8"></a>
 ## Exercise 8: Orchestrate with Kubernetes ##
